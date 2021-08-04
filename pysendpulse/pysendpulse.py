@@ -422,7 +422,7 @@ class PySendPulse:
         logger.info("Function call: get_campaign_stat_by_referrals from: '{}'".format(id, ))
         return self.__handle_error("Empty campaign id") if not id else self.__handle_result(self.__send_request('campaigns/{}/referrals'.format(id, )))
 
-    def add_campaign(self, from_email, from_name, subject, body, addressbook_id, campaign_name='', attachments=None):
+    def add_campaign(self, from_email, from_name, subject, body, addressbook_id, campaign_name='', attachments=None, template_id=None):
         """ Create new campaign
 
         @param from_email: string senders email
@@ -432,10 +432,10 @@ class PySendPulse:
         @param addressbook_id: unsigned int addressbook ID
         @param campaign_name: string campaign name
         @param attachments: dictionary with {filename_1: filebody_1, ..., filename_n: filebody_n}
+        @param template_id: int template ID
         @return: dictionary with response message
         """
-        if not attachments:
-            attachments = {}
+        
         logger.info("Function call: create_campaign")
         if not from_name or not from_email:
             return self.__handle_error('Seems you pass not all data for sender: Email or Name')
@@ -443,17 +443,23 @@ class PySendPulse:
             return self.__handle_error('Seems you pass not all data for task: Title or Body')
         elif not addressbook_id:
             return self.__handle_error('Seems you not pass addressbook ID')
-        if not attachments:
-            attachments = {}
-        return self.__handle_result(self.__send_request('campaigns', 'POST', {
+
+        data = {
             'sender_name': from_name,
             'sender_email': from_email,
             'subject': subject,
             'body': base64.b64encode(body),
-            'list_id': addressbook_id,
-            'name': campaign_name,
-            'attachments': json.dumps(attachments)
-        }))
+            'list_id': str(addressbook_id),
+            'name': campaign_name
+        }
+
+        if attachments:
+            data['attachments'] = json.dumps(attachments)
+
+        if template_id:
+            data['template_id'] = str(template_id)
+
+        return self.__handle_result(self.__send_request('campaigns', 'POST', data))
 
     def cancel_campaign(self, id):
         """ Cancel campaign
