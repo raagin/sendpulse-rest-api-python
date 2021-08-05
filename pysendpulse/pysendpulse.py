@@ -422,7 +422,7 @@ class PySendPulse:
         logger.info("Function call: get_campaign_stat_by_referrals from: '{}'".format(id, ))
         return self.__handle_error("Empty campaign id") if not id else self.__handle_result(self.__send_request('campaigns/{}/referrals'.format(id, )))
 
-    def add_campaign(self, from_email, from_name, subject, body, addressbook_id, campaign_name='', attachments=None, template_id=None):
+    def add_campaign(self, from_email, from_name, subject, body, addressbook_id, campaign_name='', attachments=None, template_id=None, is_test=False):
         """ Create new campaign
 
         @param from_email: string senders email
@@ -458,6 +458,9 @@ class PySendPulse:
 
         if template_id:
             data['template_id'] = str(template_id)
+
+        if is_test:
+            data['is_test'] = True
 
         return self.__handle_result(self.__send_request('campaigns', 'POST', data))
 
@@ -537,6 +540,21 @@ class PySendPulse:
             self.__handle_error("Empty addressbook id or email")
         return self.__handle_result(self.__send_request('addressbooks/{}/emails/{}'.format(id, email)))
 
+    def unsubscribe_emails_from_addressbook(self, id, emails):
+        """ Unsubscribe emails address from addressbook
+
+        @param id: unsigned int addressbook ID
+        @param emails: array of string valid email addresses
+        @return: dictionary with response message
+        """
+        logger.info("Function call: unsubscribe_emails_from_addressbook from: '{}'".format(id))
+        if not id or not emails:
+            self.__handle_error("Empty addressbook id or emails")
+
+        return self.__handle_result(
+            self.__send_request('addressbooks/{id}/emails/unsubscribe'.format(id=id), 'POST', {'emails': emails })
+            )
+
     def get_email_info_from_all_addressbooks(self, email):
         """ Get global information about email
 
@@ -593,6 +611,8 @@ class PySendPulse:
         logger.info("Function call: delete_email_from_blacklist for '{}'".format(email, ))
         return self.__handle_error('Empty email') if not email else self.__handle_result(self.__send_request('blacklist', 'DELETE', {'emails': base64.b64encode(email)}))
 
+
+
     # ------------------------------------------------------------------ #
     #                              SMTP                                  #
     # ------------------------------------------------------------------ #
@@ -616,6 +636,16 @@ class PySendPulse:
             'to': date_to,
             'sender': sender,
             'recipient': recipient
+        }))
+
+    def smtp_get_list_of_unsubscribed_emails(self, limit=0, offset=0, date=None):
+        """
+        """
+        logger.info("Function call: smtp_get_list_of_unsubscribed_emails")
+        return self.__handle_result(self.__send_request('smtp/unsubscribe', 'GET', {
+            'limit': limit,
+            'offset': offset,
+            'date': date
         }))
 
     def smtp_get_email_info_by_id(self, id):
